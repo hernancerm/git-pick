@@ -46,6 +46,16 @@ bindkey "^g^k" zg-head-map
 # File: ~/.zshrc
 ```
 
+In PowerShell, set the variable before dot-sourcing and bind `Invoke-ZgHeadMap`:
+
+```powershell
+$ZG_HEAD_MAP_REGEX = '[A-Z]+-[0-9]+'
+. "${HOME}/.zsh-git/zsh-git/pwsh/git.ps1"
+Set-PSReadLineKeyHandler -Chord 'Ctrl+g,Ctrl+k' -ScriptBlock { Invoke-ZgHeadMap }
+
+# File: $PROFILE
+```
+
 ### Excluding files from `zg-status` (<kbd>Ctrl-g</kbd><kbd>Ctrl-s</kbd>)
 
 Set `ZG_STATUS_EXCLUDE=1` before sourcing the plugin so
@@ -61,6 +71,8 @@ source "${HOME}/.zsh-git/zsh-git/git.plugin.zsh"
 
 # File: ~/.zshrc
 ```
+
+In PowerShell, set `$ZG_STATUS_EXCLUDE = 1` before dot-sourcing `pwsh/git.ps1`.
 
 The exclusions are defined per directory, in a `.zg_status_exclude` file. On each
 <kbd>Ctrl-g</kbd><kbd>Ctrl-s</kbd> the closest such file is looked up: the lookup starts at
@@ -98,8 +110,7 @@ Add `.zg_status_exclude` to your global `.gitignore`.
 ### Without a plugin manager
 
 1. Install [fzf](https://github.com/junegunn/fzf) and [babashka](https://babashka.org/)
-   (`bb`). Both shells run the same core, `core/git.clj`, which runs git and fzf and prints
-   what goes in the buffer.
+   (`bb`).
 
 2. Clone the zsh-git repository by executing the below command:
 
@@ -107,6 +118,8 @@ Add `.zg_status_exclude` to your global `.gitignore`.
     git clone 'https://github.com/hernancerm/zsh-git.git' \
       "${HOME}/.zsh-git/zsh-git"
     ```
+
+#### Zsh
 
 3. Source the plugin (also add command to your `~/.zshrc` to enable on future sessions):
 
@@ -136,22 +149,27 @@ Add `.zg_status_exclude` to your global `.gitignore`.
     }
     ```
 
-### PowerShell
+#### PowerShell
 
-Install as above, then dot-source the PowerShell layer from `$PROFILE`. The same settings
-are PowerShell variables, set before dot-sourcing:
+3. Source the PowerShell layer from `$PROFILE`:
 
-```powershell
-$ZG_STATUS_EXCLUDE = 1
-$ZG_HEAD_MAP_REGEX = '[A-Z]+-[0-9]+'
-. "${HOME}/.zsh-git/zsh-git/pwsh/git.ps1"
-Set-PSReadLineKeyHandler -Chord 'Ctrl+g,Ctrl+k' -ScriptBlock { Invoke-ZgHeadMap }
-```
+    ```powershell
+    . "${HOME}/.zsh-git/zsh-git/pwsh/git.ps1"
+    ```
 
-The keybinds are the zsh ones. With `$ZG_SET_KEYBINDS = 0`, bind `Invoke-ZgStatus`,
-`Invoke-ZgWorktrees`, `Invoke-ZgHead`, `Invoke-ZgHeadMap` or `Invoke-ZgMenu` yourself.
+    OR: If you want to set custom keybinds then use:
+
+    ```powershell
+    $ZG_SET_KEYBINDS = 0
+    . "${HOME}/.zsh-git/zsh-git/pwsh/git.ps1"
+    Set-PSReadLineKeyHandler -Chord 'Ctrl+g,Ctrl+s' -ScriptBlock { Invoke-ZgStatus }
+    Set-PSReadLineKeyHandler -Chord 'Ctrl+g,Ctrl+w' -ScriptBlock { Invoke-ZgWorktrees }
+    Set-PSReadLineKeyHandler -Chord 'Ctrl+g,Ctrl+h' -ScriptBlock { Invoke-ZgHead }
+    ```
 
 ### With a plugin manager
+
+#### Zsh
 
 With [Sheldon](https://github.com/rossmacarthur/sheldon):
 
