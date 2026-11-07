@@ -1,16 +1,17 @@
 #!/usr/bin/env bb
 
-;; Shell-independent core of zsh-git. The shell layers (git.zsh, pwsh/git.ps1) only bind keys, run
-;; this script and add what it prints to the command line.
+;; Shell-independent core of git-pick. The shell layers (git-pick.zsh, pwsh/git-pick.ps1) only bind
+;; keys, run this script and add what it prints to the command line.
 ;;
 ;; Usage:
-;;   bb git.clj status --shell <shell> [--exclude]  Pick status files in fzf. `--exclude` leaves
-;;                                                  out the ones in `.zg_status_exclude`.
-;;   bb git.clj worktrees --shell <shell>           Pick worktree paths in fzf.
-;;   bb git.clj head [--map-regex <regex>]          Print the HEAD, or its first match of <regex>
-;;                                                  (group 1 when the regex has one).
-;;   bb git.clj menu --shell <shell> [--exclude] [--map-regex <regex>]
-;;                                                  Pick one of the above in fzf, then run it.
+;;   bb git-pick.clj status --shell <shell> [--exclude]
+;;     Pick status files in fzf. `--exclude` leaves out the ones in `.gitpickignore`.
+;;   bb git-pick.clj worktrees --shell <shell>
+;;     Pick worktree paths in fzf.
+;;   bb git-pick.clj head [--map-regex <regex>]
+;;     Print the HEAD, or its first match of <regex> (group 1 when the regex has one).
+;;   bb git-pick.clj menu --shell <shell> [--exclude] [--map-regex <regex>]
+;;     Pick one of the above in fzf, then run it.
 ;; <shell> is zsh or pwsh, for quoting the filepaths. Prints nothing when a pick is cancelled.
 
 (require '[babashka.fs :as fs]
@@ -161,13 +162,13 @@
        (str/join "/")))
 
 (defn exclude-file
-  "The closest `.zg_status_exclude`, from the cwd up to `$HOME` when the cwd is under it, else up
+  "The closest `.gitpickignore`, from the cwd up to `$HOME` when the cwd is under it, else up
   to the root. Files higher up are not merged in."
   #_[:=> [:cat] [:maybe :string]]
   []
   (let [stop (fs/canonicalize home)]
     (loop [dir (fs/canonicalize ".")]
-      (let [file (fs/path dir ".zg_status_exclude")]
+      (let [file (fs/path dir ".gitpickignore")]
         (cond
           (fs/readable? file) (str file)
           (or (= dir stop) (nil? (fs/parent dir))) nil
@@ -183,7 +184,7 @@
   #_[:=> [:cat] [:maybe :string]]
   []
   (let [dir (str (fs/path (or (System/getenv "XDG_CACHE_HOME") (fs/path home ".cache"))
-                          "zsh-git" "match_repo"))]
+                          "git-pick" "match_repo"))]
     (when-not (fs/exists? (fs/path dir ".git"))
       (git ["-c" "init.templateDir=" "init" "-q" dir] nil))
     (when (fs/exists? (fs/path dir ".git"))
@@ -215,7 +216,7 @@
        vec))
 
 (defn split-excluded
-  "`[included header]`: the status lines `.zg_status_exclude` does not exclude, and a header line
+  "`[included header]`: the status lines `.gitpickignore` does not exclude, and a header line
   per pattern which excluded some, with how many."
   #_[:=> [:cat [:vector :string]] [:tuple [:vector :string] [:maybe :string]]]
   [lines]
@@ -296,11 +297,11 @@
   (let [[cmd & args] *command-line-args*
         {:keys [shell exclude map-regex] :as opts} (parse-opts args)]
     (when (and (#{"status" "worktrees" "menu"} cmd) (not (#{"zsh" "pwsh"} shell)))
-      (error (str "Usage: git.clj " cmd " --shell <zsh|pwsh>")))
+      (error (str "Usage: git-pick.clj " cmd " --shell <zsh|pwsh>")))
     (print (case cmd
              "status" (status shell exclude)
              "worktrees" (worktrees shell)
              "head" (head map-regex)
              "menu" (menu opts)
-             (error "Usage: git.clj <status|worktrees|head|menu>")))
+             (error "Usage: git-pick.clj <status|worktrees|head|menu>")))
     (flush)))
