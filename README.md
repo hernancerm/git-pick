@@ -1,6 +1,6 @@
 # zsh-git
 
-zsh + [fzf](https://github.com/junegunn/fzf) + git
+zsh (or PowerShell) + [fzf](https://github.com/junegunn/fzf) + git
 
 ## Usage
 
@@ -29,19 +29,13 @@ cd <Ctrl-g><Ctrl-w>
 
 ### Transforming HEAD with `zg-head-map`
 
-Set `zg_map_head` and use `zg-head-map` to map the HEAD before putting it in the zsh
-buffer. Example:
+Set `ZG_HEAD_MAP_REGEX` and use `zg-head-map` to put only the HEAD's first match of the
+regex in the zsh buffer (its group 1 when it has one, else the whole match). Nothing is put
+when it does not match. The regex is Java's syntax. Example:
 
 ```bash
-## @stdin HEAD.
-## @stdout Mapped HEAD.
-function zg_map_head {
-  local line
-  read line
-  [[ ${line} =~ ([A-Z]+-[0-9]+) ]] \
-    # Jira ticket key, e.g., ABC-123.
-    && echo "${match[1]}"
-}
+# Jira ticket key, e.g., ABC-123.
+ZG_HEAD_MAP_REGEX='[A-Z]+-[0-9]+'
 source "${HOME}/.zsh-git/zsh-git/git.plugin.zsh"
 bindkey "^g^k" zg-head-map
 
@@ -103,7 +97,9 @@ Add `.zg_status_exclude` to your global `.gitignore`.
 
 ### Without a plugin manager
 
-1. Install [fzf](https://github.com/junegunn/fzf).
+1. Install [fzf](https://github.com/junegunn/fzf) and [babashka](https://babashka.org/)
+   (`bb`). Both shells run the same core, `core/git.clj`, which runs git and fzf and prints
+   what goes in the buffer.
 
 2. Clone the zsh-git repository by executing the below command:
 
@@ -139,6 +135,21 @@ Add `.zg_status_exclude` to your global `.gitignore`.
       zvm_bindkey viins "^g" zg-menu
     }
     ```
+
+### PowerShell
+
+Install as above, then dot-source the PowerShell layer from `$PROFILE`. The same settings
+are PowerShell variables, set before dot-sourcing:
+
+```powershell
+$ZG_STATUS_EXCLUDE = 1
+$ZG_HEAD_MAP_REGEX = '[A-Z]+-[0-9]+'
+. "${HOME}/.zsh-git/zsh-git/pwsh/git.ps1"
+Set-PSReadLineKeyHandler -Chord 'Ctrl+g,Ctrl+k' -ScriptBlock { Invoke-ZgHeadMap }
+```
+
+The keybinds are the zsh ones. With `$ZG_SET_KEYBINDS = 0`, bind `Invoke-ZgStatus`,
+`Invoke-ZgWorktrees`, `Invoke-ZgHead`, `Invoke-ZgHeadMap` or `Invoke-ZgMenu` yourself.
 
 ### With a plugin manager
 
