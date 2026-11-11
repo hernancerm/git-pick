@@ -3,8 +3,12 @@
 # Set these before dot-sourcing, with the same meaning as in zsh (see the README):
 #   $GP_SET_KEYBINDS = 0, $GP_STATUS_EXCLUDE = 1, $GP_HEAD_MAP_REGEX = '...'
 #   $GP_PREFIX, in PSReadLine chord syntax (see `Get-Help Set-PSReadLineKeyHandler`).
+#   $GP_CMD, the command running the core. Set it to run from source with bb, e.g.:
+#     $GP_CMD = 'bb', "$HOME/dev/repos/git-pick/src/git_pick/core.clj"
 
-$script:GpCore = Join-Path $PSScriptRoot '../core/git-pick.clj'
+if ($null -eq $GP_CMD) {
+  $GP_CMD = 'git-pick'
+}
 
 # The git calls, fzf and quoting live in the core, shared with the zsh layer.
 function Invoke-GpCore([string[]] $CoreArgs) {
@@ -14,7 +18,9 @@ function Invoke-GpCore([string[]] $CoreArgs) {
   if ($GP_STATUS_EXCLUDE -eq 1 -and $CoreArgs[0] -in 'status', 'menu') {
     $CoreArgs += '--exclude'
   }
-  $out = bb $script:GpCore @CoreArgs
+  # `@()` so a single string is one command, not a list of characters.
+  $cmd = @($GP_CMD)
+  $out = & $cmd[0] @($cmd | Select-Object -Skip 1) @CoreArgs
   # Redraw the prompt, which fzf drew over.
   [Microsoft.PowerShell.PSConsoleReadLine]::InvokePrompt()
   if ($out) {

@@ -1,22 +1,28 @@
 #!/usr/bin/env bb
 
 ;; Shell-independent core of git-pick. The shell layers (git-pick.zsh, pwsh/git-pick.ps1) only bind
-;; keys, run this script and add what it prints to the command line.
+;; keys, run the `git-pick` binary and add what it prints to the command line. In development, run
+;; this file with bb instead (`bb src/git_pick/core.clj <args>`), it takes the same args.
 ;;
 ;; Usage:
-;;   bb git-pick.clj status --shell <shell> [--exclude]
+;;   git-pick status --shell <shell> [--exclude]
 ;;     Pick status files in fzf. `--exclude` leaves out the ones in `.gitpickignore`.
-;;   bb git-pick.clj worktrees --shell <shell>
+;;   git-pick worktrees --shell <shell>
 ;;     Pick worktree paths in fzf.
-;;   bb git-pick.clj head [--map-regex <regex>]
+;;   git-pick head [--map-regex <regex>]
 ;;     Print the HEAD, or its first match of <regex> (group 1 when the regex has one).
-;;   bb git-pick.clj menu --shell <shell> [--exclude] [--map-regex <regex>]
+;;   git-pick menu --shell <shell> [--exclude] [--map-regex <regex>]
 ;;     Pick one of the above in fzf, then run it.
 ;; <shell> is zsh or pwsh, for quoting the filepaths. Prints nothing when a pick is cancelled.
 
-(require '[babashka.fs :as fs]
-         '[babashka.process :as p]
-         '[clojure.string :as str])
+(ns git-pick.core
+  (:require [babashka.fs :as fs]
+            [babashka.process :as p]
+            [clojure.string :as str])
+  (:gen-class))
+
+;; Native Image cannot resolve reflective calls at run time.
+(set! *warn-on-reflection* true)
 
 #_[:type Shell [:enum "zsh" "pwsh"]]
 
@@ -112,7 +118,7 @@
   "Decodes a filepath git wrapped in double quotes: C-style escapes and octal per byte for the
   non-ASCII characters, see `core.quotePath` in git-config(1)."
   #_[:=> [:cat :string] :string]
-  [s]
+  [^String s]
   (let [out (java.io.ByteArrayOutputStream.)
         escapes {\a 7 \b 8 \t 9 \n 10 \v 11 \f 12 \r 13 \" 34 \\ 92}]
     (loop [i 1]
@@ -293,15 +299,21 @@
     (println (str "ERROR: " msg)))
   (System/exit 1))
 
-(when (= *file* (System/getProperty "babashka.file"))
-  (let [[cmd & args] *command-line-args*
+(defn -main [& argv]
+  (let [[cmd & args] argv
         {:keys [shell exclude map-regex] :as opts} (parse-opts args)]
     (when (and (#{"status" "worktrees" "menu"} cmd) (not (#{"zsh" "pwsh"} shell)))
-      (error (str "Usage: git-pick.clj " cmd " --shell <zsh|pwsh>")))
+      (error (str "Usage: git-pick " cmd " --shell <zsh|pwsh>")))
     (print (case cmd
              "status" (status shell exclude)
              "worktrees" (worktrees shell)
              "head" (head map-regex)
              "menu" (menu opts)
-             (error "Usage: git-pick.clj <status|worktrees|head|menu>")))
-    (flush)))
+             (error "Usage: git-pick <status|worktrees|head|menu>")))
+    (flush)
+    ;; babashka.process reads output on agent threads, which keep the JVM alive for a minute.
+    (shutdown-agents)))
+
+;; Run as a script by bb. The binary enters through `-main`.
+(when (= *file* (System/getProperty "babashka.file"))
+  (apply -main *command-line-args*))

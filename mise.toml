@@ -1,0 +1,4 @@
+[tools]
+# GraalVM for `native-image`, bb for the build tasks and running from source.
+java = "graalvm-community-25.0.2"
+babashka = "1.13.227"

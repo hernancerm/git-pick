@@ -1,0 +1,132 @@
+name: Release
+
+run-name: Release ${{ inputs.version }}
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to release (MAJOR.MINOR.PATCH, no leading v)'
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+jobs:
+
+  prepare:
+    name: prepare
+    runs-on: ubuntu-latest
+    outputs:
+      sha: ${{ steps.sha.outputs.sha }}
+    steps:
+      - name: Check out main
+        uses: actions/checkout@v7.0.1
+        with:
+          ref: main
+          fetch-depth: 0
+      - name: Record the commit being released
+        id: sha
+        run: echo "sha=$(git rev-parse HEAD)" >> "${GITHUB_OUTPUT}"
+      - name: Reject an already released version
+        run: |
+          if git rev-parse -q --verify "refs/tags/${{ inputs.version }}" > /dev/null
+          then
+            echo "error: tag ${{ inputs.version }} already exists" >&2
+            exit 1
+          fi
+
+  build:
+    name: build (${{ matrix.asset }})
+    needs: prepare
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: macos-15
+            asset: git-pick-macos-arm64
+          - os: ubuntu-24.04-arm
+            asset: git-pick-linux-arm64
+          - os: ubuntu-latest
+            asset: git-pick-linux-x86_64
+          - os: windows-latest
+            asset: git-pick-windows-x86_64
+    steps:
+      - name: Check out the commit being released
+        uses: actions/checkout@v7.0.1
+        with:
+          ref: ${{ needs.prepare.outputs.sha }}
+      - name: Cache Maven
+        uses: actions/cache@v6
+        with:
+          path: ~/.m2
+          key: ${{ runner.os }}-maven-${{ hashFiles('deps.edn') }}
+          restore-keys: ${{ runner.os }}-maven-
+      - name: Install Native Image build dependencies
+        # Native Image links against the system toolchain and zlib, which the
+        # Linux runner images do not ship in full.
+        if: runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install -y build-essential zlib1g-dev
+      - name: Install GraalVM and bb
+        # Versions from mise.toml.
+        uses: jdx/mise-action@v4
+      - name: Set up MSVC
+        # Native Image on Windows links with MSVC, which must be on PATH.
+        if: runner.os == 'Windows'
+        uses: ilammy/msvc-dev-cmd@0b201ec74fa43914dc39ae48a89fd1d8cb592756 # v1.13.0
+      - name: Build binary
+        run: bb bin
+      - name: Package binary
+        if: runner.os != 'Windows'
+        run: |
+          cp -v target/git-pick .
+          tar czf '${{ matrix.asset }}.tar.gz' git-pick
+          shasum -a 256 '${{ matrix.asset }}.tar.gz' > '${{ matrix.asset }}.tar.gz.sha256'
+      - name: Package binary (Windows)
+        if: runner.os == 'Windows'
+        env:
+          ASSET: ${{ matrix.asset }}
+        run: |
+          Copy-Item -Verbose target/git-pick.exe .
+          Compress-Archive -Path git-pick.exe -DestinationPath "$env:ASSET.zip"
+          $hash = (Get-FileHash -Algorithm SHA256 "$env:ASSET.zip").Hash.ToLower()
+          # Written by hand to match the `shasum` format and LF ending of the other assets.
+          [IO.File]::WriteAllText("$PWD/$env:ASSET.zip.sha256", "$hash  $env:ASSET.zip`n")
+      - name: Upload to the workflow
+        uses: actions/upload-artifact@v7
+        with:
+          name: ${{ matrix.asset }}
+          path: ${{ matrix.asset }}.*
+          if-no-files-found: error
+
+  release:
+    name: release
+    needs: [prepare, build]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Download the binaries
+        uses: actions/download-artifact@v8
+        with:
+          pattern: git-pick-*
+          path: dist
+          merge-multiple: true
+      # Tags the commit the binaries were built from, even if main moved since.
+      - name: Create the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          VERSION: ${{ inputs.version }}
+        run: |
+          gh release create "${VERSION}" \
+            --title "${VERSION}" \
+            --target '${{ needs.prepare.outputs.sha }}' \
+            --generate-notes \
+            dist/*

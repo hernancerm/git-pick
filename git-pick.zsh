@@ -7,12 +7,15 @@ function gp_version {
   echo '0.1.2-SNAPSHOT'
 }
 
-# Set by git-pick.plugin.zsh. The fallback covers sourcing this file directly.
-GP_PATH="${GP_PATH:-${${(%):-%x}:A:h}}"
 GP_PREFIX="${GP_PREFIX:-^g}"
 GP_SET_KEYBINDS="${GP_SET_KEYBINDS:-1}"
 GP_STATUS_EXCLUDE="${GP_STATUS_EXCLUDE:-0}"
 GP_HEAD_MAP_REGEX="${GP_HEAD_MAP_REGEX:-}"
+# Command running the core. Set it to run from source with bb, e.g.:
+#   GP_CMD=(bb ~/dev/repos/git-pick/src/git_pick/core.clj)
+if (( ! ${+GP_CMD} )); then
+  GP_CMD=(git-pick)
+fi
 
 # CORE
 
@@ -28,7 +31,7 @@ function _gp_core {
   if [[ GP_STATUS_EXCLUDE -eq 1 && "${1}" = (status|menu) ]]; then
     args+=(--exclude)
   fi
-  bb "${GP_PATH}/core/git-pick.clj" "${args[@]}"
+  "${GP_CMD[@]}" "${args[@]}"
 }
 
 # WIDGETS

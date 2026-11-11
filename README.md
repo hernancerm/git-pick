@@ -33,8 +33,15 @@ See also: [ADVANCED_USAGE.md](/ADVANCED_USAGE.md)
 
 ### Without a plugin manager
 
-1. Install [fzf](https://github.com/junegunn/fzf) and [babashka](https://babashka.org/)
-   (`bb`).
+1. Install [fzf](https://github.com/junegunn/fzf) and the `git-pick` binary. With
+   [mise](https://mise.jdx.dev/):
+
+    ```bash
+    mise use -g github:hernancerm/git-pick
+    ```
+
+    OR: Download it from the [releases](https://github.com/hernancerm/git-pick/releases)
+    and put it on your `PATH`.
 
 2. Clone the git-pick repository by executing the below command:
 
@@ -93,6 +100,8 @@ See also: [ADVANCED_USAGE.md](/ADVANCED_USAGE.md)
 
 ### With a plugin manager
 
+Install fzf and the `git-pick` binary as in step 1 above, then:
+
 #### Zsh
 
 With [Sheldon](https://github.com/rossmacarthur/sheldon):
@@ -110,6 +119,23 @@ eval "$(sheldon source)"
 
 # File: ~/.zshrc
 ```
+
+## Development
+
+The core is [src/git_pick/core.clj](/src/git_pick/core.clj). To run it from source with
+[babashka](https://babashka.org/) instead of the binary, set this before sourcing the
+plugin:
+
+```bash
+GP_CMD=(bb ~/dev/repos/git-pick/src/git_pick/core.clj)
+```
+
+```powershell
+$GP_CMD = 'bb', "$HOME/dev/repos/git-pick/src/git_pick/core.clj"
+```
+
+The core must run on both bb and the JVM. Build the binary with `bb bin` (needs the
+tools in `mise.toml`).
 
 ## Similar projects
 
