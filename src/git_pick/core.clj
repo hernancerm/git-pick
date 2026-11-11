@@ -78,29 +78,40 @@
 
 ;; HEAD
 
+(defn map-branch
+  "The first match of `map-regex` in `branch` (group 1 when the regex has one), or empty when it
+  does not match. `branch` as is when there is no regex."
+  #_[:=> [:cat :string [:maybe :string]] :string]
+  [branch map-regex]
+  (if (and (seq map-regex) (seq branch))
+    (let [m (re-find (re-pattern map-regex) branch)]
+      (cond
+        (nil? m) ""
+        (string? m) m
+        :else (or (second m) (first m))))
+    branch))
+
 (defn head
   "The branch, or empty when detached."
   #_[:=> [:cat [:maybe :string]] :string]
   [map-regex]
-  (let [branch (str/trim (or (git ["rev-parse" "--abbrev-ref" "HEAD"] nil) ""))
-        branch (if (= "HEAD" branch) "" branch)]
-    (if (and (seq map-regex) (seq branch))
-      (let [m (re-find (re-pattern map-regex) branch)]
-        (cond
-          (nil? m) ""
-          (string? m) m
-          :else (or (second m) (first m))))
-      branch)))
+  (let [branch (str/trim (or (git ["rev-parse" "--abbrev-ref" "HEAD"] nil) ""))]
+    (map-branch (if (= "HEAD" branch) "" branch) map-regex)))
 
 ;; WORKTREES
+
+(defn worktree-paths
+  "Paths in the output of `git worktree list --porcelain -z`. NUL delimited end to end:
+  `--porcelain` prints paths raw, so a path with a newline would otherwise split over two lines."
+  #_[:=> [:cat :string] [:sequential :string]]
+  [out]
+  (->> (str/split out #"\x00")
+       (keep #(second (re-matches #"(?s)worktree (.*)" %)))))
 
 (defn worktrees
   #_[:=> [:cat Shell] :string]
   [shell]
-  ;; NUL delimited end to end: `--porcelain` prints paths raw, so a path with a newline would
-  ;; otherwise split over two lines.
-  (let [paths (->> (str/split (or (git ["worktree" "list" "--porcelain" "-z"] nil) "") #"\x00")
-                   (keep #(second (re-matches #"(?s)worktree (.*)" %))))]
+  (let [paths (worktree-paths (or (git ["worktree" "list" "--porcelain" "-z"] nil) ""))]
     (if (empty? paths)
       ""
       (->> (str/split (fzf ["--multi" "--read0" "--print0" "--bind" "ctrl-a:toggle-all"]

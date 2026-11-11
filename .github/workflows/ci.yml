@@ -1,0 +1,31 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+    paths-ignore:
+      - 'README.md'
+
+jobs:
+
+  ci:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repo
+        uses: actions/checkout@v7.0.1
+      - name: Cache Clojure deps
+        # Maven deps, git deps (the test runner) and the Clojure CLI that `bb clojure` downloads.
+        uses: actions/cache@v6
+        with:
+          path: |
+            ~/.m2
+            ~/.gitlibs
+            ~/.deps.clj
+          key: ${{ runner.os }}-clojure-${{ hashFiles('deps.edn') }}
+          restore-keys: ${{ runner.os }}-clojure-
+      - name: Install Java and bb
+        # Versions from mise.toml.
+        uses: jdx/mise-action@v4
+      - name: Run tests
+        run: bb test

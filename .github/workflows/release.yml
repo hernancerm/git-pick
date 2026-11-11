@@ -41,6 +41,20 @@ jobs:
             echo "error: tag ${{ inputs.version }} already exists" >&2
             exit 1
           fi
+      - name: Cache Clojure deps
+        uses: actions/cache@v6
+        with:
+          path: |
+            ~/.m2
+            ~/.gitlibs
+            ~/.deps.clj
+          key: ${{ runner.os }}-clojure-${{ hashFiles('deps.edn') }}
+          restore-keys: ${{ runner.os }}-clojure-
+      - name: Install Java and bb
+        # Versions from mise.toml.
+        uses: jdx/mise-action@v4
+      - name: Run tests
+        run: bb test
       - name: Set version and open the changelog section
         run: .github/scripts/prepare-release.sh '${{ inputs.version }}'
       # Nothing is committed or tagged until every binary exists, so a failed
@@ -77,12 +91,15 @@ jobs:
         uses: actions/checkout@v7.0.1
         with:
           ref: ${{ needs.prepare.outputs.sha }}
-      - name: Cache Maven
+      - name: Cache Clojure deps
         uses: actions/cache@v6
         with:
-          path: ~/.m2
-          key: ${{ runner.os }}-maven-${{ hashFiles('deps.edn') }}
-          restore-keys: ${{ runner.os }}-maven-
+          path: |
+            ~/.m2
+            ~/.gitlibs
+            ~/.deps.clj
+          key: ${{ runner.os }}-clojure-${{ hashFiles('deps.edn') }}
+          restore-keys: ${{ runner.os }}-clojure-
       - name: Install Native Image build dependencies
         # Native Image links against the system toolchain and zlib, which the
         # Linux runner images do not ship in full.

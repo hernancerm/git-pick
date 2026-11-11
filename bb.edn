@@ -1,6 +1,17 @@
 ;; Build tasks. `bb clojure` is a port of the Clojure CLI, so the build also runs on Windows.
-{:tasks
- {uber {:doc "Build target/git-pick.jar"
+{:paths ["src" "test"]
+ :tasks
+ {test {:doc "Run the tests on bb and on the JVM, as the core must work on both"
+        :depends [test:bb test:jvm]}
+  test:bb {:doc "Run the tests on bb"
+           :requires ([clojure.test :as t])
+           :task (do (require 'git-pick.core-test)
+                     (let [{:keys [fail error]} (t/run-tests 'git-pick.core-test)]
+                       (when (pos? (+ fail error))
+                         (System/exit 1))))}
+  test:jvm {:doc "Run the tests on the JVM"
+            :task (clojure "-M:test")}
+  uber {:doc "Build target/git-pick.jar"
         :task (clojure "-T:build uber")}
   bin {:doc "Build the native binary target/git-pick (git-pick.exe on Windows)"
        :depends [uber]

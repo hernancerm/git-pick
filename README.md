@@ -216,7 +216,8 @@ plugin:
 - Zsh: `GP_CMD=(bb ~/dev/repos/git-pick/src/git_pick/core.clj)`
 - PowerShell: `$GP_CMD = 'bb', "$HOME/dev/repos/git-pick/src/git_pick/core.clj"`
 
-The core must run on both bb and the JVM. Build the binary with `bb bin`.
+The core must run on both bb and the JVM. `bb test` runs the tests on both. Build the
+binary with `bb bin`.
 
 ## Similar projects
 
