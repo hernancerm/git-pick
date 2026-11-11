@@ -29,8 +29,11 @@
 #_[:type Opts
    [:map [:shell [:maybe Shell]] [:exclude :boolean] [:map-regex [:maybe :string]]]]
 
-;; `$HOME` first, as the shells use it for `~`. Java's home (`fs/home`) ignores it.
-(def home #_[:- :string]
+;; `$HOME` first, as the shells use it for `~`. Java's home (`fs/home`) ignores it. A function, not a
+;; `def`, as the binary runs the `def`s at build time and would keep the build machine's `$HOME`.
+(defn home
+  #_[:=> [:cat] :string]
+  []
   (or (System/getenv "HOME") (str (fs/home))))
 
 ;; PROCESSES
@@ -172,7 +175,7 @@
   to the root. Files higher up are not merged in."
   #_[:=> [:cat] [:maybe :string]]
   []
-  (let [stop (fs/canonicalize home)]
+  (let [stop (fs/canonicalize (home))]
     (loop [dir (fs/canonicalize ".")]
       (let [file (fs/path dir ".gitpickignore")]
         (cond
@@ -189,7 +192,7 @@
   the template brings no `info/exclude`."
   #_[:=> [:cat] [:maybe :string]]
   []
-  (let [dir (str (fs/path (or (System/getenv "XDG_CACHE_HOME") (fs/path home ".cache"))
+  (let [dir (str (fs/path (or (System/getenv "XDG_CACHE_HOME") (fs/path (home) ".cache"))
                           "git-pick" "match_repo"))]
     (when-not (fs/exists? (fs/path dir ".git"))
       (git ["-c" "init.templateDir=" "init" "-q" dir] nil))
