@@ -6,14 +6,14 @@ zsh (or PowerShell) + [fzf](https://github.com/junegunn/fzf) + git
 
 After sourcing the plugin these keybinds are set:
 
-- <kbd>Ctrl-g</kbd><kbd>Ctrl-s</kbd> Add status files to the zsh buffer.
+- <kbd>Ctrl-g</kbd><kbd>Ctrl-s</kbd> Add status files to the command line.
   - <kbd>Ctrl-f</kbd> Includes excluded items (`GP_STATUS_EXCLUDE`) in fzf's list.
   - <kbd>Ctrl-a</kbd> Toggles selecting all items from fzf's list.
   - <kbd>Tab</kbd> Toggle current item selection.
-- <kbd>Ctrl-g</kbd><kbd>Ctrl-w</kbd> Add worktree path to the zsh buffer.
+- <kbd>Ctrl-g</kbd><kbd>Ctrl-w</kbd> Add worktree path to the command line.
   - <kbd>Ctrl-a</kbd> Toggles selecting all items from fzf's list.
   - <kbd>Tab</kbd> Toggle current item selection.
-- <kbd>Ctrl-g</kbd><kbd>Ctrl-h</kbd> Add the HEAD to the zsh buffer.
+- <kbd>Ctrl-g</kbd><kbd>Ctrl-h</kbd> Add the HEAD to the command line.
 
 Usage examples:
 
@@ -28,7 +28,6 @@ cd <Ctrl-g><Ctrl-w>
 > -ixon` disables flow control.
 
 ## Advanced usage
-
 
 <details>
 
@@ -118,19 +117,17 @@ Set-PSReadLineKeyHandler -Chord 'Ctrl+g,Ctrl+k' -ScriptBlock { Invoke-GpHeadMap 
 
 ## Installation
 
-
 First, install [fzf](https://github.com/junegunn/fzf) and the `git-pick` binary. With
 [mise](https://mise.jdx.dev/):
 
- ```bash
- mise use -g github:hernancerm/git-pick
- ```
+```bash
+mise use -g github:hernancerm/git-pick
+```
 
- OR: Download it from [releases](https://github.com/hernancerm/git-pick/releases) and add
- to `$PATH`.
+OR: Download it from [releases](https://github.com/hernancerm/git-pick/releases) and add
+to `$PATH`.
 
 ### Zsh
-
 
 With [Sheldon](https://github.com/rossmacarthur/sheldon) (Zsh plugin manager):
 
@@ -188,12 +185,10 @@ Alternatively, if not using Sheldon:
 
 ### PowerShell
 
-
 1. Clone the git-pick repository by executing the below command:
 
-    ```bash
-    git clone 'https://github.com/hernancerm/git-pick.git' \
-      "${HOME}/.local/share/git-pick"
+    ```powershell
+    git clone 'https://github.com/hernancerm/git-pick.git' "${HOME}/.local/share/git-pick"
     ```
 
 2. Source the PowerShell layer from `$PROFILE`:
