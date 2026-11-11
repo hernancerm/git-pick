@@ -4,7 +4,7 @@ command -v gp_version > /dev/null && return
 # CONFIGURATION
 
 function gp_version {
-  echo '0.1.2-SNAPSHOT'
+  echo '0.2.0'
 }
 
 GP_PREFIX="${GP_PREFIX:-^g}"

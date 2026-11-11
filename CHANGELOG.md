@@ -7,6 +7,8 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-11-11
+
 ### Added
 
 - Prebuilt binaries for macOS arm64, Linux arm64 and x86_64, and Windows x86_64,
@@ -46,6 +48,7 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 - Initial release.
 
-[Unreleased]: https://github.com/hernancerm/git-pick/compare/0.1.1...HEAD
+[Unreleased]: https://github.com/hernancerm/git-pick/compare/0.2.0...HEAD
+[0.2.0]: https://github.com/hernancerm/git-pick/compare/0.1.1...0.2.0
 [0.1.1]: https://github.com/hernancerm/git-pick/compare/0.1.0...0.1.1
 [0.1.0]: https://github.com/hernancerm/git-pick/releases/tag/0.1.0
