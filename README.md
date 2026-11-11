@@ -1,3 +1,7 @@
+<a href="https://github.com/hernancerm/git-pick/actions/workflows/ci.yml" target="_blank">
+  <img src="https://github.com/hernancerm/git-pick/actions/workflows/ci.yml/badge.svg" />
+</a>
+
 # git-pick
 
 zsh (or PowerShell) + [fzf](https://github.com/junegunn/fzf) + git
