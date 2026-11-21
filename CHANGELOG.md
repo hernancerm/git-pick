@@ -7,6 +7,16 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Changed
+
+- The core is written in Go instead of Clojure.
+- `GP_HEAD_MAP_REGEX` uses Go's regex syntax (RE2) instead of Java's. Lookarounds and
+  backreferences are no longer supported.
+
+### Removed
+
+- `GP_CMD`. To run a local build, put its directory first on the `PATH` instead.
+
 ## [0.2.0] - 2026-11-11
 
 ### Added

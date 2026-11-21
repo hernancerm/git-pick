@@ -92,7 +92,8 @@ Add `.gitpickignore` to your global `.gitignore`.
 
 Set `GP_HEAD_MAP_REGEX` and use `gp-head-map` to put only the HEAD's first match of the
 regex in the zsh buffer (its group 1 when it has one, else the whole match). Nothing is put
-when it does not match. The regex is Java's syntax. Example:
+when it does not match. The regex is Go's syntax
+([RE2](https://github.com/google/re2/wiki/Syntax)). Example:
 
 ```bash
 # Jira ticket key, e.g., ABC-123.
@@ -213,15 +214,15 @@ Alternatively, if not using Sheldon:
 
 ## Development
 
-To run [src/git_pick/core.clj](/src/git_pick/core.clj) from source with
-[babashka](https://babashka.org/) instead of the binary, set this before sourcing the
-plugin:
+The core is [main.go](/main.go). Build it to `target/git-pick` with
+`go build -o target/ .`, then put `target/` first on the `PATH` to use that build instead
+of the installed binary:
 
-- Zsh: `GP_CMD=(bb ~/dev/repos/git-pick/src/git_pick/core.clj)`
-- PowerShell: `$GP_CMD = 'bb', "$HOME/dev/repos/git-pick/src/git_pick/core.clj"`
+- Zsh: `PATH="${HOME}/dev/repos/git-pick/target:${PATH}"`
+- PowerShell:
+  `$env:PATH = "$HOME/dev/repos/git-pick/target" + [IO.Path]::PathSeparator + $env:PATH`
 
-The core must run on both bb and the JVM. `bb test` runs the tests on both. Build the
-binary with `bb bin`.
+Run the tests with `go test ./...`.
 
 ## Similar projects
 

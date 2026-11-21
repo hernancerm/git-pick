@@ -41,20 +41,11 @@ jobs:
             echo "error: tag ${{ inputs.version }} already exists" >&2
             exit 1
           fi
-      - name: Cache Clojure deps
-        uses: actions/cache@v6
-        with:
-          path: |
-            ~/.m2
-            ~/.gitlibs
-            ~/.deps.clj
-          key: ${{ runner.os }}-clojure-${{ hashFiles('deps.edn') }}
-          restore-keys: ${{ runner.os }}-clojure-
-      - name: Install Java and bb
-        # Versions from mise.toml.
+      - name: Install Go
+        # Version from mise.toml.
         uses: jdx/mise-action@v4
       - name: Run tests
-        run: bb test
+        run: go test ./...
       - name: Set version and open the changelog section
         run: .github/scripts/prepare-release.sh '${{ inputs.version }}'
       # Nothing is committed or tagged until every binary exists, so a failed
@@ -73,63 +64,54 @@ jobs:
   build:
     name: build (${{ matrix.asset }})
     needs: prepare
-    runs-on: ${{ matrix.os }}
+    # Go cross-compiles, so one OS builds every asset.
+    runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
         include:
-          - os: macos-15
-            asset: git-pick-macos-arm64
-          - os: ubuntu-24.04-arm
-            asset: git-pick-linux-arm64
-          - os: ubuntu-latest
-            asset: git-pick-linux-x86_64
-          - os: windows-latest
-            asset: git-pick-windows-x86_64
+          - asset: git-pick-macos-arm64
+            goos: darwin
+            goarch: arm64
+          - asset: git-pick-linux-arm64
+            goos: linux
+            goarch: arm64
+          - asset: git-pick-linux-x86_64
+            goos: linux
+            goarch: amd64
+          - asset: git-pick-windows-x86_64
+            goos: windows
+            goarch: amd64
     steps:
       - name: Check out the commit being released
         uses: actions/checkout@v7.0.1
         with:
           ref: ${{ needs.prepare.outputs.sha }}
-      - name: Cache Clojure deps
-        uses: actions/cache@v6
-        with:
-          path: |
-            ~/.m2
-            ~/.gitlibs
-            ~/.deps.clj
-          key: ${{ runner.os }}-clojure-${{ hashFiles('deps.edn') }}
-          restore-keys: ${{ runner.os }}-clojure-
-      - name: Install Native Image build dependencies
-        # Native Image links against the system toolchain and zlib, which the
-        # Linux runner images do not ship in full.
-        if: runner.os == 'Linux'
-        run: sudo apt-get update && sudo apt-get install -y build-essential zlib1g-dev
-      - name: Install GraalVM and bb
-        # Versions from mise.toml.
+      - name: Install Go
+        # Version from mise.toml.
         uses: jdx/mise-action@v4
-      - name: Set up MSVC
-        # Native Image on Windows links with MSVC, which must be on PATH.
-        if: runner.os == 'Windows'
-        uses: ilammy/msvc-dev-cmd@0b201ec74fa43914dc39ae48a89fd1d8cb592756 # v1.13.0
       - name: Build binary
-        run: bb bin
+        env:
+          GOOS: ${{ matrix.goos }}
+          GOARCH: ${{ matrix.goarch }}
+          # A static binary, so it runs on any libc.
+          CGO_ENABLED: '0'
+        run: go build -trimpath -ldflags '-s -w' -o target/ .
       - name: Package binary
-        if: runner.os != 'Windows'
-        run: |
-          cp -v target/git-pick .
-          tar czf '${{ matrix.asset }}.tar.gz' git-pick
-          shasum -a 256 '${{ matrix.asset }}.tar.gz' > '${{ matrix.asset }}.tar.gz.sha256'
-      - name: Package binary (Windows)
-        if: runner.os == 'Windows'
         env:
           ASSET: ${{ matrix.asset }}
         run: |
-          Copy-Item -Verbose target/git-pick.exe .
-          Compress-Archive -Path git-pick.exe -DestinationPath "$env:ASSET.zip"
-          $hash = (Get-FileHash -Algorithm SHA256 "$env:ASSET.zip").Hash.ToLower()
-          # Written by hand to match the `shasum` format and LF ending of the other assets.
-          [IO.File]::WriteAllText("$PWD/$env:ASSET.zip.sha256", "$hash  $env:ASSET.zip`n")
+          cd target
+          if [[ '${{ matrix.goos }}' == 'windows' ]]
+          then
+            archive="${ASSET}.zip"
+            zip "${archive}" git-pick.exe
+          else
+            archive="${ASSET}.tar.gz"
+            tar czf "${archive}" git-pick
+          fi
+          sha256sum "${archive}" > "../${archive}.sha256"
+          mv "${archive}" ..
       - name: Upload to the workflow
         uses: actions/upload-artifact@v7
         with:
