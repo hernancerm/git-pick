@@ -46,12 +46,12 @@ jobs:
         uses: jdx/mise-action@v4
       - name: Run tests
         run: go test ./...
-      - name: Set version and open the changelog section
+      - name: Open the changelog section
         run: .github/scripts/prepare-release.sh '${{ inputs.version }}'
       # Nothing is committed or tagged until every binary exists, so a failed
       # build leaves main and the tag list untouched and the workflow can just be
-      # re-run. The binary does not embed the version, so only the release job
-      # applies the patch.
+      # re-run. The binary gets the version from the build flags, not from the
+      # patch, so only the release job applies it.
       - name: Save the release edit as a patch
         run: git diff > release.patch
       - name: Upload the patch
@@ -96,7 +96,9 @@ jobs:
           GOARCH: ${{ matrix.goarch }}
           # A static binary, so it runs on any libc.
           CGO_ENABLED: '0'
-        run: go build -trimpath -ldflags '-s -w' -o target/ .
+        run: |
+          go build -trimpath -o target/ \
+            -ldflags "-s -w -X main.version=${{ needs.prepare.outputs.version }}" .
       - name: Package binary
         env:
           ASSET: ${{ matrix.asset }}
@@ -145,7 +147,7 @@ jobs:
         uses: actions/download-artifact@v8
         with:
           name: release-patch
-      - name: Apply the release version
+      - name: Apply the changelog section
         run: git apply release.patch && rm release.patch
       - name: Commit and tag
         env:
@@ -153,7 +155,7 @@ jobs:
         run: |
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add CHANGELOG.md git-pick.zsh
+          git add CHANGELOG.md
           git commit -m "chore(release): ${VERSION}"
           git tag "${VERSION}"
           git push origin main
@@ -180,23 +182,3 @@ jobs:
             --verify-tag \
             dist/*
 
-  next-snapshot:
-    name: next-snapshot
-    needs: [prepare, release]
-    runs-on: ubuntu-latest
-    permissions:
-      contents: write
-    steps:
-      - name: Check out main
-        uses: actions/checkout@v7.0.1
-        with:
-          ref: main
-      - name: Bump to the next snapshot
-        run: .github/scripts/start-next-snapshot.sh '${{ needs.prepare.outputs.version }}'
-      - name: Commit
-        run: |
-          git config user.name 'github-actions[bot]'
-          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add git-pick.zsh
-          git commit -m 'chore: start next development iteration'
-          git push origin main

@@ -8,7 +8,7 @@ zsh (or PowerShell) + [fzf](https://github.com/junegunn/fzf) + git
 
 ## Usage
 
-After sourcing the plugin these keybinds are set:
+After loading git-pick (see [Installation](#installation)) these keybinds are set:
 
 - <kbd>Ctrl-g</kbd><kbd>Ctrl-s</kbd> Add status files to the command line.
   - <kbd>Ctrl-f</kbd> Includes excluded items (`GP_STATUS_EXCLUDE`) in fzf's list.
@@ -37,12 +37,12 @@ cd <Ctrl-g><Ctrl-w>
 
 <summary>Excluding files from <code>gp-status</code> (<kbd>Ctrl-g</kbd><kbd>Ctrl-s</kbd>)</summary>
 
-Set `GP_STATUS_EXCLUDE=1` before sourcing the plugin so
+Set `GP_STATUS_EXCLUDE=1` before loading git-pick so
 <kbd>Ctrl-g</kbd><kbd>Ctrl-s</kbd> leaves specific files out of fzf's list:
 
 ```bash
 GP_STATUS_EXCLUDE=1
-source "${HOME}/.local/share/git-pick/git-pick.plugin.zsh"
+eval "$(git-pick init zsh)"
 
 # Use case:
 # Exclude from `git add` files modified for app startup purposes.
@@ -51,7 +51,7 @@ source "${HOME}/.local/share/git-pick/git-pick.plugin.zsh"
 # File: ~/.zshrc
 ```
 
-In PowerShell, set `$GP_STATUS_EXCLUDE = 1` before dot-sourcing `pwsh/git-pick.ps1`.
+In PowerShell, set `$GP_STATUS_EXCLUDE = 1` before loading git-pick.
 
 The exclusions are defined per directory, in a `.gitpickignore` file. On each
 <kbd>Ctrl-g</kbd><kbd>Ctrl-s</kbd> the closest such file is looked up: the lookup starts
@@ -98,7 +98,7 @@ when it does not match. The regex is Go's syntax
 ```bash
 # Jira ticket key, e.g., ABC-123.
 GP_HEAD_MAP_REGEX='[A-Z]+-[0-9]+'
-source "${HOME}/.local/share/git-pick/git-pick.plugin.zsh"
+eval "$(git-pick init zsh)"
 bindkey "^g^k" gp-head-map
 
 # Use case:
@@ -108,11 +108,11 @@ bindkey "^g^k" gp-head-map
 # File: ~/.zshrc
 ```
 
-In PowerShell, set the variable before dot-sourcing and bind `Invoke-GpHeadMap`:
+In PowerShell, set the variable before loading git-pick and bind `Invoke-GpHeadMap`:
 
 ```powershell
 $GP_HEAD_MAP_REGEX = '[A-Z]+-[0-9]+'
-. "${HOME}/.local/share/git-pick/pwsh/git-pick.ps1"
+Invoke-Expression (& git-pick init pwsh | Out-String)
 Set-PSReadLineKeyHandler -Chord 'Ctrl+g,Ctrl+k' -ScriptBlock { Invoke-GpHeadMap }
 
 # File: $PROFILE
@@ -134,95 +134,70 @@ to `$PATH`.
 
 ### Zsh
 
-With [Sheldon](https://github.com/rossmacarthur/sheldon) (Zsh plugin manager):
-
-```toml
-[plugins.git-pick]
-github = "hernancerm/git-pick"
-
-# File: ~/.config/sheldon/plugins.toml
-```
+Load git-pick from `~/.zshrc`:
 
 ```bash
-# Source plugins.
-eval "$(sheldon source)"
+eval "$(git-pick init zsh)"
 
 # File: ~/.zshrc
 ```
 
-Alternatively, if not using Sheldon:
+OR: If you want to set custom keybinds then use:
 
-1. Clone the git-pick repository by executing the below command:
+```bash
+GP_SET_KEYBINDS=0
+eval "$(git-pick init zsh)"
+bindkey "^g^s" gp-status
+bindkey "^g^w" gp-worktrees
+bindkey "^g^h" gp-head
 
-    ```bash
-    git clone 'https://github.com/hernancerm/git-pick.git' \
-      "${HOME}/.local/share/git-pick"
-    ```
+# File: ~/.zshrc
+```
 
-2. Source the plugin (also add the command to your `~/.zshrc` to enable on future
-   sessions):
+OR: If you use [jeffreytse/zsh-vi-mode](https://github.com/jeffreytse/zsh-vi-mode):
 
-    ```bash
-    source "${HOME}/.local/share/git-pick/git-pick.plugin.zsh"
-    ```
+```bash
+GP_SET_KEYBINDS=0
+eval "$(git-pick init zsh)"
+function zvm_after_init {
+  zvm_define_widget gp-menu
+  # ZVM does not handle chords well, prefer gp-menu.
+  zvm_bindkey viins "^g" gp-menu
+}
 
-    OR: If you want to set custom keybinds then use:
-
-    ```bash
-    GP_SET_KEYBINDS=0
-    source "${HOME}/.local/share/git-pick/git-pick.plugin.zsh"
-    bindkey "^g^s" gp-status
-    bindkey "^g^w" gp-worktrees
-    bindkey "^g^h" gp-head
-    ```
-
-    OR: If you use [jeffreytse/zsh-vi-mode](https://github.com/jeffreytse/zsh-vi-mode):
-
-    ```bash
-    GP_SET_KEYBINDS=0
-    source "${HOME}/.local/share/git-pick/git-pick.plugin.zsh"
-    function zvm_after_init {
-      zvm_define_widget gp-menu
-      # ZVM does not handle chords well, prefer gp-menu.
-      zvm_bindkey viins "^g" gp-menu
-    }
-    ```
+# File: ~/.zshrc
+```
 
 ### PowerShell
 
-1. Clone the git-pick repository by executing the below command:
+Load git-pick from `$PROFILE`:
 
-    ```powershell
-    git clone 'https://github.com/hernancerm/git-pick.git' "${HOME}/.local/share/git-pick"
-    ```
+```powershell
+Invoke-Expression (& git-pick init pwsh | Out-String)
 
-2. Source the PowerShell layer from `$PROFILE`:
+# File: $PROFILE
+```
 
-    ```powershell
-    . "${HOME}/.local/share/git-pick/pwsh/git-pick.ps1"
-    ```
+OR: If you want to set custom keybinds then use:
 
-    OR: If you want to set custom keybinds then use:
+```powershell
+$GP_SET_KEYBINDS = 0
+Invoke-Expression (& git-pick init pwsh | Out-String)
+Set-PSReadLineKeyHandler -Chord 'Ctrl+g,Ctrl+s' -ScriptBlock { Invoke-GpStatus }
+Set-PSReadLineKeyHandler -Chord 'Ctrl+g,Ctrl+w' -ScriptBlock { Invoke-GpWorktrees }
+Set-PSReadLineKeyHandler -Chord 'Ctrl+g,Ctrl+h' -ScriptBlock { Invoke-GpHead }
 
-    ```powershell
-    $GP_SET_KEYBINDS = 0
-    . "${HOME}/.local/share/git-pick/pwsh/git-pick.ps1"
-    Set-PSReadLineKeyHandler -Chord 'Ctrl+g,Ctrl+s' -ScriptBlock { Invoke-GpStatus }
-    Set-PSReadLineKeyHandler -Chord 'Ctrl+g,Ctrl+w' -ScriptBlock { Invoke-GpWorktrees }
-    Set-PSReadLineKeyHandler -Chord 'Ctrl+g,Ctrl+h' -ScriptBlock { Invoke-GpHead }
-    ```
+# File: $PROFILE
+```
 
 ## Development
 
-The core is [main.go](/main.go). Build it to `target/git-pick` with
-`go build -o target/ .`, then put `target/` first on the `PATH` to use that build instead
-of the installed binary:
+Run the tests with `go test ./...`. To try a change, build the binary onto `$PATH`, ahead
+of any installed release:
 
-- Zsh: `PATH="${HOME}/dev/repos/git-pick/target:${PATH}"`
-- PowerShell:
-  `$env:PATH = "$HOME/dev/repos/git-pick/target" + [IO.Path]::PathSeparator + $env:PATH`
-
-Run the tests with `go test ./...`.
+```bash
+go build -o ~/.local/bin/git-pick .
+```
 
 ## Similar projects
 

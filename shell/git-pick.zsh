@@ -1,11 +1,8 @@
-# Do not source this script multiple times.
-command -v gp_version > /dev/null && return
+# Zsh layer of git-pick, printed by `git-pick init zsh`. Load it from ~/.zshrc:
+#   eval "$(git-pick init zsh)"
+# Set the GP_* variables before that line, see the README.
 
 # CONFIGURATION
-
-function gp_version {
-  echo '0.2.1-SNAPSHOT'
-}
 
 GP_PREFIX="${GP_PREFIX:-^g}"
 GP_SET_KEYBINDS="${GP_SET_KEYBINDS:-1}"

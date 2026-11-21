@@ -7,6 +7,13 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Added
+
+- `git-pick init zsh` and `git-pick init pwsh`, which print the shell layer. Load it with
+  `eval "$(git-pick init zsh)"` in `~/.zshrc`, or
+  `Invoke-Expression (& git-pick init pwsh | Out-String)` in `$PROFILE`.
+- `git-pick --version`.
+
 ### Changed
 
 - The core is written in Go instead of Clojure.
@@ -15,7 +22,10 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Removed
 
-- `GP_CMD`. To run a local build, put its directory first on the `PATH` instead.
+- `GP_CMD`. To run a local build, build it onto `$PATH` instead (see the README).
+- The zsh plugin (`git-pick.plugin.zsh`) and the PowerShell script (`pwsh/git-pick.ps1`).
+  Use `git-pick init` instead, so Sheldon and cloning the repository are no longer needed.
+- `gp_version`. Use `git-pick --version` instead.
 
 ## [0.2.0] - 2026-11-11
 

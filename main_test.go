@@ -4,6 +4,7 @@ import (
 	"os"
 	"path/filepath"
 	"reflect"
+	"strings"
 	"testing"
 )
 
@@ -92,6 +93,18 @@ func TestExcludedPatterns(t *testing.T) {
 	check(t, excludedPatterns(file, repo,
 		[]string{"a.log", "src/b.log", "keep.log", "build/x.txt", "c.txt"}),
 		map[string]string{"a.log": "*.log", "src/b.log": "*.log", "build/x.txt": "build/"})
+}
+
+func TestShellLayer(t *testing.T) {
+	for _, shell := range []string{"zsh", "pwsh"} {
+		layer, err := shellLayer(shell)
+		check(t, err, nil)
+		if !strings.Contains(layer, "GP_SET_KEYBINDS") {
+			t.Errorf("%s layer is not embedded", shell)
+		}
+	}
+	_, err := shellLayer("bash")
+	check(t, err.Error(), "Usage: git-pick init <zsh|pwsh>")
 }
 
 func TestParseOpts(t *testing.T) {

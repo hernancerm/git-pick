@@ -1,6 +1,6 @@
-# PowerShell layer of git-pick. Dot-source it from $PROFILE:
-#   . ~/dev/repos/git-pick/pwsh/git-pick.ps1
-# Set these before dot-sourcing, with the same meaning as in zsh (see the README):
+# PowerShell layer of git-pick, printed by `git-pick init pwsh`. Load it from $PROFILE:
+#   Invoke-Expression (& git-pick init pwsh | Out-String)
+# Set these before that line, with the same meaning as in zsh (see the README):
 #   $GP_SET_KEYBINDS = 0, $GP_STATUS_EXCLUDE = 1, $GP_HEAD_MAP_REGEX = '...'
 #   $GP_PREFIX, in PSReadLine chord syntax (see `Get-Help Set-PSReadLineKeyHandler`).
 

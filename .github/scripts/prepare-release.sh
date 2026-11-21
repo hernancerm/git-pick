@@ -1,8 +1,7 @@
 #!/usr/bin/env bash
 
-# Opens a release in the working tree: sets the version in git-pick.zsh and turns the
-# [Unreleased] section of CHANGELOG.md into a dated section for it. Run from the
-# repo root. Commits nothing.
+# Opens a release in the working tree: turns the [Unreleased] section of CHANGELOG.md
+# into a dated section for it. Run from the repo root. Commits nothing.
 
 set -euo pipefail
 
@@ -53,7 +52,5 @@ awk \
   ' CHANGELOG.md > CHANGELOG.md.tmp
 
 mv CHANGELOG.md.tmp CHANGELOG.md
-
-.github/scripts/set-version.sh "${version}"
 
 echo "prepared ${version} (previous: ${prev})"

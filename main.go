@@ -1,8 +1,12 @@
-// Shell-independent core of git-pick. The shell layers (git-pick.zsh, pwsh/git-pick.ps1) only bind
-// keys, run the `git-pick` binary and add what it prints to the command line.
+// Shell-independent core of git-pick. The shell layers (shell/git-pick.zsh, shell/git-pick.ps1)
+// only bind keys, run the `git-pick` binary and add what it prints to the command line.
 //
 // Usage:
 //
+//	git-pick init <shell>
+//	  Print the shell layer, to load from the shell's startup file.
+//	git-pick --version
+//	  Print the version.
 //	git-pick status --shell <shell> [--exclude]
 //	  Pick status files in fzf. `--exclude` leaves out the ones in `.gitpickignore`.
 //	git-pick worktrees --shell <shell>
@@ -16,6 +20,7 @@
 package main
 
 import (
+	_ "embed"
 	"errors"
 	"fmt"
 	"os"
@@ -24,6 +29,16 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+)
+
+// Set at build time with `-ldflags "-X main.version=..."`.
+var version = "dev"
+
+var (
+	//go:embed shell/git-pick.zsh
+	zshLayer string
+	//go:embed shell/git-pick.ps1
+	pwshLayer string
 )
 
 type opts struct {
@@ -448,10 +463,32 @@ func fail(msg string) {
 	os.Exit(1)
 }
 
+func shellLayer(shell string) (string, error) {
+	switch shell {
+	case "zsh":
+		return zshLayer, nil
+	case "pwsh":
+		return pwshLayer, nil
+	}
+	return "", errors.New("Usage: git-pick init <zsh|pwsh>")
+}
+
 func main() {
 	cmd, args := "", []string{}
 	if len(os.Args) > 1 {
 		cmd, args = os.Args[1], os.Args[2:]
+	}
+	switch cmd {
+	case "--version":
+		fmt.Println(version)
+		return
+	case "init":
+		layer, err := shellLayer(strings.Join(args, " "))
+		if err != nil {
+			fail(err.Error())
+		}
+		fmt.Print(layer)
+		return
 	}
 	o, err := parseOpts(args)
 	if err != nil {
@@ -474,7 +511,7 @@ func main() {
 	case "menu":
 		out, err = menu(o)
 	default:
-		fail("Usage: git-pick <status|worktrees|head|menu>")
+		fail("Usage: git-pick <init|status|worktrees|head|menu|--version>")
 	}
 	if err != nil {
 		fail(err.Error())
