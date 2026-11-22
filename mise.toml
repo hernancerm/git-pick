@@ -1,2 +1,6 @@
 [tools]
 go = "1.27.4"
+
+[tasks.build]
+description = "Build bin/git-pick, with the version from git"
+run = 'go build -ldflags "-X main.version=$(git describe --tags --always --dirty)" -o bin/git-pick .'

@@ -199,6 +199,26 @@ of any installed release:
 go build -o ~/.local/bin/git-pick .
 ```
 
+If you installed git-pick globally with mise, register your build as a mise version
+named `dev`, once:
+
+```bash
+mise link github:hernancerm/git-pick@dev "$PWD"
+```
+
+Select it in `~/.config/mise/config.local.toml`, which overrides the global config:
+
+```toml
+[tools]
+"github:hernancerm/git-pick" = "dev"
+```
+
+Then build into the repo's `bin/`, which mise runs from:
+
+```bash
+mise run build
+```
+
 ## Similar projects
 
 - <https://github.com/junegunn/fzf-git.sh>
